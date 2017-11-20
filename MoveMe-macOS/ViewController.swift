@@ -80,7 +80,7 @@ class ViewController: NSViewController {
         passedTimeSecconds += 1
         print("Timer tick: passed: \(passedTimeSecconds), target: \(targetTimeSeconds)")
         updateTimeView()
-        if passedTimeSecconds >= targetTimeSeconds / 60 {
+        if passedTimeSecconds >= targetTimeSeconds {
             onTargetTimeReached()
         }
     }
