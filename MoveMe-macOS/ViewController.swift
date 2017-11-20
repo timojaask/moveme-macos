@@ -2,9 +2,11 @@ import Cocoa
 
 class ViewController: NSViewController {
     var timer: Timer?
-    let defaultTargetTimeSeconds = 20 * 60;
-    var targetTimeSeconds = 20 * 60;
-    var passedTimeSecconds = 0;
+    let defaultTargetTimeSeconds = 20 * 60
+    var targetTimeSeconds = 20 * 60
+    var passedTimeSecconds = 0
+    var timeStarted: Date?
+    var sessionTimePassedSeconds = 0
     
     @IBOutlet weak var statusLabel: NSTextField!
     @IBOutlet weak var timeLeftLabel: NSTextField!
@@ -28,7 +30,6 @@ class ViewController: NSViewController {
     
     func loadTargetTimeFromSettings() {
         let minutes = LocalStorage.loadNumberOfMinutes()
-        
         targetTimeSeconds = minutes < 1 ? defaultTargetTimeSeconds : minutes * 60;
     }
     
@@ -63,7 +64,8 @@ class ViewController: NSViewController {
             statusLabel.stringValue = "PAUSED"
         }
         if isRunning() {
-            let timeLeftSeconds = targetTimeSeconds - passedTimeSecconds
+            let totalTimePassed = passedTimeSecconds + sessionTimePassedSeconds
+            let timeLeftSeconds = targetTimeSeconds - totalTimePassed
             timeLeftLabel.stringValue = secondsToTimeString(totalSeconds: timeLeftSeconds)
             statusLabel.stringValue = "RUNNING"
         }
@@ -77,10 +79,11 @@ class ViewController: NSViewController {
     }
     
     func onTimerTick() {
-        passedTimeSecconds += 1
-        print("Timer tick: passed: \(passedTimeSecconds), target: \(targetTimeSeconds)")
+        sessionTimePassedSeconds = Int(timeStarted?.timeIntervalSinceNow ?? 0) * -1
+        
         updateTimeView()
-        if passedTimeSecconds >= targetTimeSeconds {
+        let totalTimePassed = passedTimeSecconds + sessionTimePassedSeconds
+        if totalTimePassed >= targetTimeSeconds {
             onTargetTimeReached()
         }
     }
@@ -101,7 +104,9 @@ class ViewController: NSViewController {
     }
     
     func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true, block: { _ in
+        timeStarted = Date()
+        sessionTimePassedSeconds = 0
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true, block: { _ in
             DispatchQueue.main.async {
                 self.onTimerTick()
             }
@@ -111,13 +116,14 @@ class ViewController: NSViewController {
     }
     
     func pauseTimer() {
+        passedTimeSecconds += sessionTimePassedSeconds
         clearTimerInstance()
         updateTimeView()
         updateButtons()
     }
     
     func stopTimer() {
-        passedTimeSecconds = 0;
+        passedTimeSecconds = 0
         clearTimerInstance()
         updateTimeView()
         updateButtons()
